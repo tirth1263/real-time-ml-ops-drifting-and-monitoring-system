@@ -1,5 +1,6 @@
 services:
   api:
+    image: real-time-mlops-api:local
     build:
       context: ./backend
     environment:
@@ -53,7 +54,9 @@ services:
       - prometheus
 
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.14.3
+    image: real-time-mlops-api:local
+    build:
+      context: ./backend
     command: >
       mlflow server
       --backend-store-uri sqlite:////mlflow/mlflow.db
