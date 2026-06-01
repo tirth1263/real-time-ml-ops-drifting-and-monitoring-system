@@ -75,30 +75,42 @@ def _apply_covariate_shift(
 def _conversion_probability(frame: pd.DataFrame, scenario: ScenarioName, rng: np.random.Generator) -> np.ndarray:
     if scenario in {"severe_drift", "trend_shift"}:
         logit = (
-            -2.4
-            + 0.0035 * frame["ad_spend"]
-            + 1.2 * frame["discount_rate"]
-            + 0.042 * frame["search_index"]
-            + 2.8 * frame["social_sentiment"]
-            + 1.4 * frame["seasonality"]
-            - 1.55 * frame["inventory_pressure"]
-            - 2.35 * frame["competitor_price_index"]
-            + rng.normal(0, 0.35, len(frame))
+            -3.2
+            + 0.003 * frame["ad_spend"]
+            + 0.8 * frame["discount_rate"]
+            + 0.060 * frame["search_index"]
+            + 4.4 * frame["social_sentiment"]
+            + 1.8 * frame["seasonality"]
+            - 2.4 * frame["inventory_pressure"]
+            - 3.0 * frame["competitor_price_index"]
+            + rng.normal(0, 0.18, len(frame))
         )
     else:
         logit = (
-            -3.05
-            + 0.010 * frame["ad_spend"]
-            + 3.7 * frame["discount_rate"]
-            + 0.026 * frame["search_index"]
-            + 1.35 * frame["social_sentiment"]
-            + 1.05 * frame["seasonality"]
-            - 0.82 * frame["inventory_pressure"]
-            - 1.05 * frame["competitor_price_index"]
-            + rng.normal(0, 0.28, len(frame))
+            -4.1
+            + 0.018 * frame["ad_spend"]
+            + 5.8 * frame["discount_rate"]
+            + 0.035 * frame["search_index"]
+            + 2.2 * frame["social_sentiment"]
+            + 1.7 * frame["seasonality"]
+            - 1.5 * frame["inventory_pressure"]
+            - 1.8 * frame["competitor_price_index"]
+            + rng.normal(0, 0.16, len(frame))
         )
 
     return _sigmoid(logit.to_numpy())
+
+
+def _sample_labels(probabilities: np.ndarray, scenario: ScenarioName, rng: np.random.Generator) -> np.ndarray:
+    labels = (probabilities >= 0.5).astype(int)
+    flip_rate = {
+        "baseline": 0.035,
+        "mild_drift": 0.05,
+        "severe_drift": 0.08,
+        "trend_shift": 0.06,
+    }[scenario]
+    flips = rng.random(len(labels)) < flip_rate
+    return np.where(flips, 1 - labels, labels)
 
 
 def generate_consumer_batch(
@@ -115,7 +127,7 @@ def generate_consumer_batch(
     frame = _clip_frame(frame)
 
     probabilities = _conversion_probability(frame, scenario, rng)
-    labels = rng.binomial(1, probabilities)
+    labels = _sample_labels(probabilities, scenario, rng)
     frame["purchased"] = labels
     frame["true_probability"] = probabilities
     frame["scenario"] = scenario
