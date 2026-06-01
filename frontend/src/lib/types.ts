@@ -57,6 +57,11 @@ export interface SystemStatus {
     trained_at: string;
     training_metrics: Record<string, number>;
     last_training_reason: string;
+    weights?: number[];
+    intercept?: number;
+    means?: Record<string, number>;
+    stds?: Record<string, number>;
+    reference_profile?: ReferenceProfile;
   };
   settings: {
     accuracy_threshold: number;
@@ -77,6 +82,11 @@ export interface SystemStatus {
   events: EventItem[];
   training_runs: TrainingRun[];
   drift_report_available: boolean;
+  drift_report_url?: string;
+  storage_status?: "ready" | "setup_required";
+  storage_error?: string;
+  updated_at?: string;
+  owner_uid?: string;
 }
 
 export interface PredictionInput {
@@ -108,4 +118,17 @@ export interface SimulationResponse {
   retraining_triggered: boolean;
   retraining: TrainingRun | null;
   model: SystemStatus["model"];
+}
+
+export interface ReferenceProfile {
+  rows: number;
+  features: Record<
+    string,
+    {
+      edges: number[];
+      expected: number[];
+      mean: number;
+      std: number;
+    }
+  >;
 }

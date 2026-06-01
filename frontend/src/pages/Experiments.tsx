@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Line, LineChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MetricCard } from "../components/MetricCard";
 import { StatusPill } from "../components/StatusPill";
-import { retrain } from "../lib/api";
+import { firebaseConsoleUrl, retrain } from "../lib/api";
 import type { SystemStatus } from "../lib/types";
 
 export function Experiments({ status, refresh }: { status: SystemStatus | null; refresh: () => Promise<void> | void }) {
@@ -11,9 +11,12 @@ export function Experiments({ status, refresh }: { status: SystemStatus | null; 
 
   async function runRetrain() {
     setBusy(true);
-    await retrain("manual_experiment_retrain");
-    await refresh();
-    setBusy(false);
+    try {
+      await retrain("manual_experiment_retrain");
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   const trainingChart = status?.training_runs
@@ -32,14 +35,14 @@ export function Experiments({ status, refresh }: { status: SystemStatus | null; 
         <div>
           <p className="eyebrow">Experiment registry</p>
           <h2>Model lineage and retraining history</h2>
-          <p className="hero-copy">Each retraining run saves a model artifact and logs metrics to MLflow when the tracking server is available.</p>
+          <p className="hero-copy">Each retraining run writes metrics to Firestore and saves the versioned model artifact in Firebase Storage.</p>
         </div>
         <div className="hero-actions">
           <button disabled={busy} onClick={runRetrain} type="button">
             <RotateCcw size={18} /> Launch retraining run
           </button>
-          <a className="button-link secondary" href="http://localhost:5000" target="_blank" rel="noreferrer">
-            <ExternalLink size={18} /> Open MLflow
+          <a className="button-link secondary" href={firebaseConsoleUrl("storage")} target="_blank" rel="noreferrer">
+            <ExternalLink size={18} /> Open model artifacts
           </a>
         </div>
       </section>

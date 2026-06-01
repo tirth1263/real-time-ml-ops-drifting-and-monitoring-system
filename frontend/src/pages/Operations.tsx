@@ -2,14 +2,14 @@ import { Activity, Download, ExternalLink, FileWarning, Save, ServerCog } from "
 import { useEffect, useState } from "react";
 import { MetricCard } from "../components/MetricCard";
 import { StatusPill } from "../components/StatusPill";
-import { driftReportUrl, updateSettings } from "../lib/api";
+import { driftReportUrl, firebaseConsoleUrl, updateSettings } from "../lib/api";
 import type { SystemStatus } from "../lib/types";
 
 const links = [
-  { label: "FastAPI docs", href: "http://localhost:8000/docs" },
-  { label: "Prometheus", href: "http://localhost:9090" },
-  { label: "Grafana", href: "http://localhost:3000" },
-  { label: "MLflow", href: "http://localhost:5000" },
+  { label: "Authentication", href: firebaseConsoleUrl("auth") },
+  { label: "Firestore runtime", href: firebaseConsoleUrl("firestore") },
+  { label: "Storage artifacts", href: firebaseConsoleUrl("storage") },
+  { label: "Hosting release", href: firebaseConsoleUrl("hosting") },
 ];
 
 export function Operations({ status, refresh }: { status: SystemStatus | null; refresh: () => Promise<void> | void }) {
@@ -27,13 +27,16 @@ export function Operations({ status, refresh }: { status: SystemStatus | null; r
 
   async function saveSettings() {
     setBusy(true);
-    await updateSettings({
-      accuracy_threshold: accuracyThreshold,
-      drift_score_threshold: driftThreshold,
-      auto_retrain_enabled: autoRetrain,
-    });
-    await refresh();
-    setBusy(false);
+    try {
+      await updateSettings({
+        accuracy_threshold: accuracyThreshold,
+        drift_score_threshold: driftThreshold,
+        auto_retrain_enabled: autoRetrain,
+      });
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -42,6 +45,13 @@ export function Operations({ status, refresh }: { status: SystemStatus | null; r
         <MetricCard icon={ServerCog} label="Service state" value={status?.service ?? "offline"} tone={status?.service === "online" ? "good" : "bad"} />
         <MetricCard icon={Activity} label="Auto retrain" value={status?.settings.auto_retrain_enabled ? "Enabled" : "Disabled"} tone={status?.settings.auto_retrain_enabled ? "good" : "warn"} />
         <MetricCard icon={FileWarning} label="Active alerts" value={status?.active_alert_count ?? 0} tone={(status?.active_alert_count ?? 0) > 0 ? "bad" : "good"} />
+        <MetricCard
+          icon={Download}
+          label="Artifact storage"
+          value={status?.storage_status === "setup_required" ? "Setup needed" : "Ready"}
+          detail={status?.storage_error}
+          tone={status?.storage_status === "setup_required" ? "warn" : "good"}
+        />
       </section>
 
       <section className="panel">
@@ -78,8 +88,8 @@ export function Operations({ status, refresh }: { status: SystemStatus | null; r
       <section className="panel">
         <div className="panel-header">
           <div>
-            <p className="eyebrow">Tooling links</p>
-            <h2>Observability stack</h2>
+            <p className="eyebrow">Firebase console</p>
+            <h2>Cloud control plane</h2>
           </div>
         </div>
         <div className="link-grid">

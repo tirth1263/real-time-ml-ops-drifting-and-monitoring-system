@@ -53,9 +53,12 @@ export function Predictions({ status }: { status: SystemStatus | null }) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
-    const next = await predict(features);
-    setResult(next);
-    setBusy(false);
+    try {
+      const next = await predict(features);
+      setResult(next);
+    } finally {
+      setBusy(false);
+    }
   }
 
   function updateFeature(key: keyof PredictionInput, value: number) {

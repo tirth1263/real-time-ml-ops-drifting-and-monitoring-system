@@ -11,21 +11,27 @@ export function Dashboard({ status, refresh }: { status: SystemStatus | null; re
 
   async function runScenario(action: "baseline" | "severe_drift") {
     setBusyAction(action);
-    await simulateTraffic({
-      scenario: action,
-      batch_size: action === "baseline" ? 300 : 450,
-      drift_intensity: action === "baseline" ? 0 : 1.05,
-      trigger_retrain: true,
-    });
-    await refresh();
-    setBusyAction(null);
+    try {
+      await simulateTraffic({
+        scenario: action,
+        batch_size: action === "baseline" ? 300 : 450,
+        drift_intensity: action === "baseline" ? 0 : 1.05,
+        trigger_retrain: true,
+      });
+      await refresh();
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   async function runRetrain() {
     setBusyAction("retrain");
-    await retrain("manual_dashboard_retrain");
-    await refresh();
-    setBusyAction(null);
+    try {
+      await retrain("manual_dashboard_retrain");
+      await refresh();
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   const chartData = status?.history.map((point) => ({
@@ -40,8 +46,8 @@ export function Dashboard({ status, refresh }: { status: SystemStatus | null; re
           <p className="eyebrow">Serving model health</p>
           <h2>{status?.latest.drift_detected ? "Drift pressure detected" : "Model serving profile is stable"}</h2>
           <p className="hero-copy">
-            Current model {status?.model.version ?? "loading"} is watching consumer-trend traffic and retraining when
-            observed accuracy breaks the production threshold.
+            Current model {status?.model.version ?? "loading"} is persisted in Firebase Storage, synchronized through
+            Firestore, and retraining when observed accuracy breaks the production threshold.
           </p>
         </div>
         <div className="hero-actions">

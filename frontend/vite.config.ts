@@ -7,10 +7,12 @@ export default defineConfig({
     port: 5173,
   },
   build: {
+    chunkSizeWarningLimit: 650,
     rollupOptions: {
       output: {
         manualChunks: {
           react: ["react", "react-dom", "react-router-dom"],
+          firebase: ["firebase/app", "firebase/auth", "firebase/firestore", "firebase/storage", "firebase/analytics"],
           charts: ["recharts"],
           icons: ["lucide-react"],
         },

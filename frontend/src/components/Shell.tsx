@@ -1,6 +1,9 @@
-import { Activity, AlertTriangle, Bot, Gauge, GitBranch, LineChart, RefreshCw, ServerCog, TestTube2 } from "lucide-react";
+import type { User } from "firebase/auth";
+import { Activity, AlertTriangle, Bot, Database, Gauge, GitBranch, LineChart, LogOut, RefreshCw, ServerCog, TestTube2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+import { firebaseConsoleUrl } from "../lib/api";
+import { signOutUser } from "../lib/firebase";
 import type { SystemStatus } from "../lib/types";
 import { StatusPill } from "./StatusPill";
 
@@ -18,13 +21,18 @@ export function Shell({
   error,
   onRefresh,
   refreshing,
+  user,
 }: {
   children: ReactNode;
   status: SystemStatus | null;
   error: string | null;
   onRefresh: () => void;
   refreshing: boolean;
+  user: User;
 }) {
+  const displayName = user.displayName ?? user.email ?? "Firebase user";
+  const initial = displayName.slice(0, 1).toUpperCase();
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -48,9 +56,21 @@ export function Shell({
         </nav>
 
         <div className="sidebar-footer">
-          <StatusPill tone={error ? "bad" : "good"}>{error ? "API offline" : "API online"}</StatusPill>
-          <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">
-            FastAPI Docs
+          <StatusPill tone={error ? "bad" : "good"}>
+            <Database size={14} /> {error ? "Firebase blocked" : "Firebase ready"}
+          </StatusPill>
+          <div className="user-card">
+            {user.photoURL ? <img alt="" src={user.photoURL} /> : <span>{initial}</span>}
+            <div>
+              <strong>{displayName}</strong>
+              <small>{user.email}</small>
+            </div>
+          </div>
+          <button className="sidebar-action secondary" onClick={() => void signOutUser()} type="button">
+            <LogOut size={16} /> Sign out
+          </button>
+          <a href={firebaseConsoleUrl("hosting")} target="_blank" rel="noreferrer">
+            Firebase Console
           </a>
         </div>
       </aside>
@@ -73,7 +93,7 @@ export function Shell({
                 <StatusPill>{status.model.version}</StatusPill>
               </>
             ) : null}
-            <button className="icon-button" onClick={onRefresh} disabled={refreshing} title="Refresh API state" type="button">
+            <button className="icon-button" onClick={onRefresh} disabled={refreshing} title="Refresh Firebase state" type="button">
               <RefreshCw size={18} className={refreshing ? "spin" : ""} />
             </button>
           </div>

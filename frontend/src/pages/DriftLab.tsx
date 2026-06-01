@@ -40,26 +40,32 @@ export function DriftLab({ status, refresh }: { status: SystemStatus | null; ref
 
   async function runSimulation() {
     setBusy(true);
-    const next = await simulateTraffic({
-      scenario,
-      batch_size: batchSize,
-      drift_intensity: intensity,
-      trigger_retrain: triggerRetrain,
-    });
-    setResult(next);
-    await refresh();
-    setBusy(false);
+    try {
+      const next = await simulateTraffic({
+        scenario,
+        batch_size: batchSize,
+        drift_intensity: intensity,
+        trigger_retrain: triggerRetrain,
+      });
+      setResult(next);
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveSettings() {
     setBusy(true);
-    await updateSettings({
-      accuracy_threshold: accuracyThreshold,
-      drift_score_threshold: driftThreshold,
-      auto_retrain_enabled: autoRetrain,
-    });
-    await refresh();
-    setBusy(false);
+    try {
+      await updateSettings({
+        accuracy_threshold: accuracyThreshold,
+        drift_score_threshold: driftThreshold,
+        auto_retrain_enabled: autoRetrain,
+      });
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
